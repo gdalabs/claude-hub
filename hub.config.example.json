@@ -1,0 +1,21 @@
+{
+  "sites": {
+    "my-project": [
+      { "name": "My App", "url": "https://my-app.pages.dev/", "emoji": "🚀" },
+      { "name": "Docs", "url": "https://docs.example.com/", "emoji": "📖" }
+    ]
+  },
+  "quickstart": [
+    { "section": "My Projects" },
+    { "label": "My App", "cmd": "cd ~/projects/my-app && claude" },
+    { "section": "Claude Code Commands" },
+    { "cmd": "/init", "display": "/init — Create CLAUDE.md" },
+    { "cmd": "/cost", "display": "/cost — Check token usage" },
+    { "cmd": "/context", "display": "/context — Show context" },
+    { "cmd": "/exit", "display": "/exit — Exit session" },
+    { "cmd": "/help", "display": "/help — Show help" },
+    { "section": "Utilities" },
+    { "label": "Restart dev server", "cmd": "cd ~/projects/my-app && npm run dev" },
+    { "label": "Check running ports", "cmd": "lsof -iTCP -sTCP:LISTEN -P | grep node" }
+  ]
+}
