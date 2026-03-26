@@ -6,11 +6,31 @@ A local dashboard for [Claude Code](https://claude.ai/code) — browse sessions,
 ![Node](https://img.shields.io/badge/node-18%2B-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Vanilla-blue)
 
+## Screenshots
+
+### Session Browser
+Browse all Claude Code sessions grouped by project, with live status indicators and conversation previews.
+
+![Session Browser](docs/screenshots/sessions.png)
+
+### Agent Map
+Visualize sub-agents grouped by task category (Explore, Code, Review, etc.) with real agent names from tool metadata. Memory file counts shown per project.
+
+![Agent Map](docs/screenshots/agent-map.png)
+
+### Live Chat
+Continue conversations or start new ones via the Anthropic API, with streaming responses and code highlighting.
+
+![Live Chat](docs/screenshots/chat.png)
+
+---
+
 ## Features
 
 - **Session browser** — View all Claude Code sessions grouped by project
 - **Live chat** — Continue conversations or start new ones via the Anthropic API
-- **Sub-agent org chart** — Visualize agent hierarchies per session
+- **Agent Map** — Visualize sub-agents grouped by task category with real names from tool metadata
+- **Memory tracking** — Show memory file counts per project
 - **Image attachments** — Paste, drag & drop, or click to attach images
 - **Model switcher** — Switch between Opus, Sonnet, and Haiku
 - **Quick Start bar** — Configurable command reference with click-to-copy
