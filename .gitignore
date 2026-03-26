@@ -3,3 +3,4 @@ dist
 dist-server
 .env
 hub.config.json
+*.pdf
