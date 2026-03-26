@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>claude-hub Setup Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #1a1a2e;
+    background: #f8f9fa;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ===== Cover ===== */
+  .cover {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    color: #fff;
+    padding: 60px 24px;
+    text-align: center;
+  }
+
+  .cover-logo {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, #1D9E75, #0d6e4f);
+    border-radius: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 32px rgba(29,158,117,0.35);
+  }
+
+  .cover-logo svg { width: 36px; height: 36px; }
+
+  .cover h1 { font-size: 40px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px; }
+  .cover .subtitle { font-size: 17px; color: #8b949e; margin-bottom: 36px; }
+
+  .cover-features {
+    display: flex; gap: 20px; max-width: 640px; margin: 0 auto 32px;
+    flex-wrap: wrap; justify-content: center;
+  }
+
+  .cover-feature {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 18px 22px; flex: 1; min-width: 170px;
+  }
+
+  .cover-feature-icon { font-size: 26px; margin-bottom: 6px; }
+  .cover-feature-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .cover-feature-desc { font-size: 12px; color: #8b949e; }
+
+  .cover .version {
+    font-size: 13px; color: #484f58;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ===== Sections ===== */
+  .page {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    padding: 36px 40px;
+    margin: 24px auto;
+    max-width: 860px;
+    page-break-inside: avoid;
+  }
+
+  h2 {
+    font-size: 21px; font-weight: 700; color: #0d1117;
+    margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 2px solid #1D9E75; display: inline-block;
+  }
+
+  h3 {
+    font-size: 16px; font-weight: 600; color: #24292f;
+    margin-top: 24px; margin-bottom: 10px;
+  }
+
+  p { margin-bottom: 12px; color: #333; }
+
+  /* ===== Code ===== */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    background: #f0f3f6; padding: 2px 7px; border-radius: 4px;
+    font-size: 13px; color: #0d6e4f;
+  }
+
+  .code-block {
+    background: #0d1117; color: #e6edf3;
+    border-radius: 10px; padding: 16px 20px;
+    margin: 12px 0 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; line-height: 1.8;
+    overflow-x: auto; position: relative;
+  }
+
+  .code-block .copy-btn {
+    position: absolute; top: 8px; right: 10px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    color: #8b949e; border-radius: 6px; padding: 4px 10px;
+    font-size: 12px; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .code-block .copy-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+  /* ===== Terminal ===== */
+  .terminal {
+    background: #0d1117; border-radius: 10px; overflow: hidden;
+    margin: 16px 0; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+
+  .terminal-bar {
+    background: #161b22; padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .terminal-dot.red { background: #f85149; }
+  .terminal-dot.yellow { background: #d29922; }
+  .terminal-dot.green { background: #1D9E75; }
+  .terminal-title { color: #8b949e; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-left: 8px; }
+
+  .terminal-body {
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; line-height: 1.9; color: #e6edf3;
+  }
+
+  /* ===== Steps ===== */
+  .step {
+    display: flex; gap: 16px; margin-bottom: 18px; align-items: flex-start;
+  }
+
+  .step-num {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, #1D9E75, #0d6e4f);
+    color: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; flex-shrink: 0; margin-top: 2px;
+  }
+
+  .step-body { flex: 1; }
+  .step-title { font-weight: 600; font-size: 15px; margin-bottom: 3px; color: #0d1117; }
+  .step-desc { font-size: 13px; color: #555; }
+
+  /* ===== Boxes ===== */
+  .info-box {
+    background: #f0f9f5; border-left: 4px solid #1D9E75;
+    border-radius: 0 8px 8px 0; padding: 14px 18px;
+    margin: 14px 0; font-size: 13px;
+  }
+
+  .info-box strong { color: #0d6e4f; }
+
+  .warn-box {
+    background: #fff8f0; border-left: 4px solid #d29922;
+    border-radius: 0 8px 8px 0; padding: 14px 18px;
+    margin: 14px 0; font-size: 13px;
+  }
+
+  .warn-box strong { color: #9a6700; }
+
+  /* ===== Checklist ===== */
+  .checklist { list-style: none; margin: 12px 0; }
+
+  .checklist li {
+    padding: 7px 0 7px 30px; position: relative; font-size: 14px;
+  }
+
+  .checklist li::before {
+    content: ''; position: absolute; left: 0; top: 9px;
+    width: 18px; height: 18px;
+    border: 2px solid #1D9E75; border-radius: 4px;
+  }
+
+  /* ===== Table ===== */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+
+  th {
+    background: #f6f8fa; text-align: left;
+    padding: 10px 14px; font-weight: 600; border-bottom: 2px solid #d0d7de;
+  }
+
+  td { padding: 10px 14px; border-bottom: 1px solid #eaecef; }
+
+  /* ===== Flow ===== */
+  .flow {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin: 24px 0; flex-wrap: wrap;
+  }
+
+  .flow-item {
+    background: #f6f8fa; border: 1px solid #d0d7de;
+    border-radius: 8px; padding: 10px 16px;
+    text-align: center; font-size: 12px; font-weight: 500;
+  }
+
+  .flow-arrow { color: #1D9E75; font-size: 20px; padding: 0 8px; }
+
+  /* ===== Footer ===== */
+  .footer {
+    text-align: center; padding: 32px 0;
+    color: #999; font-size: 12px;
+  }
+
+  /* ===== Print ===== */
+  @media print {
+    body { background: #fff; font-size: 13px; }
+    .cover { padding: 50px 24px; page-break-after: always; }
+    .page { box-shadow: none; margin: 0; padding: 28px 32px; page-break-inside: avoid; }
+    .copy-btn { display: none; }
+  }
+
+  /* ===== Mobile ===== */
+  @media (max-width: 640px) {
+    .cover { padding: 40px 16px; }
+    .cover h1 { font-size: 30px; }
+    .cover-features { flex-direction: column; }
+    .page { padding: 24px 20px; margin: 16px 12px; }
+    .step { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== COVER ===== -->
+<div class="cover">
+  <div class="cover-logo">
+    <svg viewBox="0 0 40 40" fill="none"><path d="M8 20L20 8L32 20L20 32L8 20Z" fill="white"/></svg>
+  </div>
+  <h1>claude-hub</h1>
+  <div class="subtitle">Claude Code Dashboard &mdash; Setup Guide</div>
+
+  <div class="cover-features">
+    <div class="cover-feature">
+      <div class="cover-feature-icon">&#9889;</div>
+      <div class="cover-feature-title">1-Command Setup</div>
+      <div class="cover-feature-desc">npx create-claude-hub</div>
+    </div>
+    <div class="cover-feature">
+      <div class="cover-feature-icon">&#128736;</div>
+      <div class="cover-feature-title">GUI Settings</div>
+      <div class="cover-feature-desc">No JSON editing needed</div>
+    </div>
+    <div class="cover-feature">
+      <div class="cover-feature-icon">&#128172;</div>
+      <div class="cover-feature-title">Chat & Browse</div>
+      <div class="cover-feature-desc">All sessions at a glance</div>
+    </div>
+  </div>
+
+  <div class="version">v1.1.0 &middot; 2026-03 &middot; github.com/gdalabs/claude-hub</div>
+</div>
+
+<!-- ===== 1. WHAT IS CLAUDE-HUB ===== -->
+<div class="page container">
+  <h2>What is claude-hub?</h2>
+  <p>
+    claude-hub is a <strong>local web dashboard</strong> for Claude Code.
+    Sessions, chat history, and sub-agents are visualized in a browser UI.
+    You can also chat with Claude directly from the dashboard.
+  </p>
+  <p>
+    claude-hub はブラウザベースの <strong>Claude Code ダッシュボード</strong> です。
+    セッション一覧、チャット履歴、サブエージェントの可視化、Claudeとの直接チャットが可能です。
+  </p>
+
+  <div class="flow">
+    <div class="flow-item">Claude Code<br>(Terminal)</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-item">Session Files<br>(~/.claude/)</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-item">claude-hub<br>(Browser UI)</div>
+  </div>
+
+  <h3>3 Tabs</h3>
+  <table>
+    <tr><th>Tab</th><th>Description</th></tr>
+    <tr>
+      <td><strong>Sessions</strong></td>
+      <td>Claude Code の全セッション一覧。プロジェクトごとにグルーピング。アクティブセッションはリアルタイム表示。</td>
+    </tr>
+    <tr>
+      <td><strong>Chat</strong></td>
+      <td>セッションを選択してチャット履歴を閲覧。新規チャットも開始可能（APIキーが必要）。</td>
+    </tr>
+    <tr>
+      <td><strong>Settings</strong></td>
+      <td>Sites、Quick Start、プロジェクト検出の設定。JSON を直接編集する必要なし。</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ===== 2. PREREQUISITES ===== -->
+<div class="page container">
+  <h2>Prerequisites / 事前準備</h2>
+
+  <ul class="checklist">
+    <li><strong>Node.js 18+</strong> &mdash; <code>node -v</code> で確認</li>
+    <li><strong>npm</strong> &mdash; Node.js に同梱</li>
+    <li><strong>git</strong> &mdash; <code>git --version</code> で確認（推奨。なくても可）</li>
+    <li><strong>Claude Code</strong> &mdash; インストール済みであること（<code>claude --version</code>）</li>
+    <li><strong>Anthropic API Key</strong> &mdash; ダッシュボードからのチャット機能に必要</li>
+  </ul>
+
+  <div class="info-box">
+    <strong>Tip:</strong> Node.js がまだ入っていない場合は <code>brew install node</code>（macOS）でインストールできます。
+  </div>
+
+  <div class="info-box">
+    <strong>API Key:</strong> <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a> で取得できます。
+    セッション閲覧のみであればAPIキーは不要です。
+  </div>
+
+  <div class="warn-box">
+    <strong>Security:</strong> APIキーは事前に環境変数で設定するのがベストです。セットアップ時にターミナルに直接入力すると画面に表示されます：<br>
+    <code>export ANTHROPIC_API_KEY=sk-ant-xxxxx</code>
+  </div>
+</div>
+
+<!-- ===== 3. SETUP ===== -->
+<div class="page container">
+  <h2>Setup / セットアップ</h2>
+  <p>ターミナルで1コマンド実行するだけです：</p>
+
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span>npx create-claude-hub my-dashboard</span>
+  </div>
+
+  <p>対話形式で以下のステップが自動で進みます：</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Project Name / プロジェクト名</div>
+      <div class="step-desc">フォルダ名を入力（デフォルト: <code>claude-hub</code>）。引数で指定した場合はスキップ。</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Download / ダウンロード</div>
+      <div class="step-desc">GitHub から最新版を自動ダウンロード（<code>git clone</code>、git がなければ tarball フォールバック）。</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">API Key / APIキー設定</div>
+      <div class="step-desc">
+        Anthropic API キーを入力 &rarr; <code>.env</code> に保存。<br>
+        環境変数 <code>ANTHROPIC_API_KEY</code> が設定済みなら自動検出。スキップも可。
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Config / 設定ファイル作成</div>
+      <div class="step-desc"><code>hub.config.json</code> がテンプレートから自動生成。後からSettings UIで編集可能。</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="step-title">Install / 依存パッケージ</div>
+      <div class="step-desc"><code>npm install</code> を自動実行。macOS の permission エラーも自動対処。</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <div class="step-title">Start / 起動</div>
+      <div class="step-desc">「Start now?」で Y &rarr; 開発サーバーが起動。ブラウザで <code>http://localhost:5174</code> を開く。</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>Tip:</strong> 環境変数でAPIキーを事前に設定しておけば、入力プロンプトをスキップできます：
+  </div>
+
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span>export ANTHROPIC_API_KEY=sk-ant-xxxxx && npx create-claude-hub my-dashboard</span>
+  </div>
+</div>
+
+<!-- ===== 4. TERMINAL OUTPUT EXAMPLE ===== -->
+<div class="page container">
+  <h2>Terminal Output / ターミナル出力例</h2>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="terminal-dot red"></div>
+      <div class="terminal-dot yellow"></div>
+      <div class="terminal-dot green"></div>
+      <div class="terminal-title">Terminal</div>
+    </div>
+    <div class="terminal-body">
+<span style="color:#58a6ff">$</span> npx create-claude-hub my-dashboard
+<br>
+<br><span style="font-weight:bold">  claude-hub</span> <span style="color:#8b949e">— Local dashboard for Claude Code</span>
+<br>
+<br><span style="color:#58a6ff">?</span> Project name (claude-hub): <span style="color:#fff">my-dashboard</span>
+<br>
+<br><span style="color:#1D9E75">></span> Downloading claude-hub...
+<br><span style="color:#8b949e">  Downloaded to /Users/you/my-dashboard</span>
+<br>
+<br><span style="color:#1D9E75">></span> Setting up Anthropic API key...
+<br><span style="color:#8b949e">  Found ANTHROPIC_API_KEY in environment</span>
+<br>
+<br><span style="color:#1D9E75">></span> Creating config...
+<br><span style="color:#8b949e">  Created hub.config.json from example</span>
+<br>
+<br><span style="color:#1D9E75">></span> Installing dependencies...
+<br><span style="color:#8b949e">  added 147 packages in 12s</span>
+<br>
+<br><span style="color:#1D9E75; font-weight:bold">  Done!</span> claude-hub is ready.
+<br>
+<br>  <span style="color:#8b949e">cd my-dashboard</span>
+<br>  <span style="color:#8b949e">npm run dev</span>
+<br>
+<br>  Then open <span style="color:#58a6ff">http://localhost:5174</span>
+<br>  Use the <span style="font-weight:bold">Settings</span> tab to add your projects.
+<br>
+<br><span style="color:#58a6ff">?</span> Start now? (Y/n): <span style="color:#fff">Y</span>
+<br><span style="color:#1D9E75">></span> Starting claude-hub...
+<br>  Opening <span style="color:#58a6ff">http://localhost:5174</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 5. SETTINGS UI ===== -->
+<div class="page container">
+  <h2>Settings Tab / 設定画面の使い方</h2>
+  <p>
+    ブラウザで <code>http://localhost:5174</code> を開いたら、上部タブの <strong>Settings</strong> をクリック。
+    すべてUIから操作でき、JSON を直接編集する必要はありません。
+  </p>
+
+  <h3>1. Sites / サイトリンク</h3>
+  <p>プロジェクトに紐づくデプロイ済みサイトのリンクを管理します。</p>
+  <table>
+    <tr><th>Button</th><th>Action</th></tr>
+    <tr><td><code>+ Add Group</code></td><td>新しいプロジェクトグループを作成</td></tr>
+    <tr><td><code>+ Add Site</code></td><td>グループ内にサイトリンクを追加（emoji, 名前, URL）</td></tr>
+    <tr><td><code>&times;</code></td><td>サイトやグループを削除</td></tr>
+  </table>
+
+  <h3>2. Quick Start / クイックスタート</h3>
+  <p>よく使うコマンドをワンクリックでコピーできるショートカット集です。</p>
+  <table>
+    <tr><th>Button</th><th>Action</th></tr>
+    <tr><td><code>+ Add Section</code></td><td>見出し（グルーピング用）を追加</td></tr>
+    <tr><td><code>+ Add Command</code></td><td>ラベル + コマンドを追加</td></tr>
+    <tr><td><code>&times;</code></td><td>項目を削除</td></tr>
+  </table>
+
+  <div class="info-box">
+    <strong>Example:</strong> ラベル「My App」、コマンド <code>cd ~/projects/my-app && claude</code>
+    と設定 &rarr; Quick Start からワンクリックでコピー &rarr; ターミナルに貼り付けて実行。
+  </div>
+
+  <h3>3. Discover Projects / プロジェクト自動検出</h3>
+  <p>ローカルのフォルダをブラウズして、プロジェクトを自動検出します。</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">パスを入力</div>
+      <div class="step-desc">例: <code>~/projects</code></div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Browse をクリック</div>
+      <div class="step-desc">フォルダ一覧が表示。<code>CLAUDE.md</code>、<code>package.json</code>、<code>.git</code> のいずれかを含むフォルダがプロジェクトとしてハイライト。</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">+ Add で Quick Start に追加</div>
+      <div class="step-desc"><code>cd /path/to/project && claude</code> が自動生成されます。</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Save で保存</div>
+      <div class="step-desc">設定が <code>hub.config.json</code> に保存され即座に反映。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 6. DAILY USE ===== -->
+<div class="page container">
+  <h2>Daily Usage / 毎日の使い方</h2>
+
+  <h3>Starting / 起動</h3>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span>cd my-dashboard && npm run dev</span>
+  </div>
+  <p>ブラウザで <code>http://localhost:5174</code> を開く。</p>
+
+  <h3>Stopping / 停止</h3>
+  <p>ターミナルで <kbd>Ctrl + C</kbd> を押す。</p>
+
+  <h3>Tips</h3>
+  <div class="info-box">
+    <strong>Mobile:</strong> QR ボタンを押すと、同じ Wi-Fi 内のスマホからアクセスできる QR コードが表示されます。
+    ネットワークアクセスを有効にするには <code>.env</code> に <code>HOST=0.0.0.0</code> を追加してください。
+  </div>
+  <div class="info-box">
+    <strong>Theme:</strong> 右上の太陽/月アイコンでダーク/ライトテーマを切り替え。
+  </div>
+  <div class="info-box">
+    <strong>Drag & Drop:</strong> サイドバーのプロジェクト順はドラッグで並び替え可能。
+  </div>
+</div>
+
+<!-- ===== 7. SECURITY ===== -->
+<div class="page container">
+  <h2>Security / セキュリティ</h2>
+
+  <table>
+    <tr><th>Item</th><th>Detail</th></tr>
+    <tr>
+      <td><strong>API Server</strong></td>
+      <td>デフォルトで <code>127.0.0.1</code>（localhost only）にバインド。外部からAPIにアクセスできません。<br>ネットワーク公開が必要な場合は <code>HOST=0.0.0.0</code> を <code>.env</code> に追加。</td>
+    </tr>
+    <tr>
+      <td><strong>Browse API</strong></td>
+      <td>ホームディレクトリ配下のみ閲覧可能。<code>.ssh</code>、<code>.gnupg</code>、<code>.aws</code> 等のセンシティブなディレクトリはブロック。</td>
+    </tr>
+    <tr>
+      <td><strong>API Key</strong></td>
+      <td><code>.env</code> ファイルに保存。<code>.gitignore</code> に含まれているため git にコミットされません。</td>
+    </tr>
+    <tr>
+      <td><strong>Config</strong></td>
+      <td>PUT /api/config は構造バリデーション付き。不正なデータは拒否されます。</td>
+    </tr>
+  </table>
+
+  <div class="warn-box">
+    <strong>Important:</strong> APIキーを <code>.env</code> 以外の場所に書かないでください。コードやconfig にハードコードすると漏洩リスクがあります。
+  </div>
+</div>
+
+<!-- ===== 8. TROUBLESHOOTING ===== -->
+<div class="page container">
+  <h2>Troubleshooting / トラブルシューティング</h2>
+
+  <table>
+    <tr><th>Problem</th><th>Solution</th></tr>
+    <tr>
+      <td><code>npm install</code> で permission error</td>
+      <td>
+        <div class="code-block" style="margin:6px 0"><button class="copy-btn" onclick="copyCode(this)">Copy</button><span>npm install --cache /tmp/npm-cache</span></div>
+      </td>
+    </tr>
+    <tr>
+      <td>セッションが表示されない</td>
+      <td>Claude Code を一度でも使ったことがあるか確認。<code>~/.claude/</code> ディレクトリが必要です。</td>
+    </tr>
+    <tr>
+      <td>Chat でエラーが出る</td>
+      <td><code>.env</code> に <code>ANTHROPIC_API_KEY</code> が正しく設定されているか確認。</td>
+    </tr>
+    <tr>
+      <td>ポートが使用中</td>
+      <td>
+        <div class="code-block" style="margin:6px 0"><button class="copy-btn" onclick="copyCode(this)">Copy</button><span>lsof -ti :5174 :3456 | xargs kill</span></div>
+      </td>
+    </tr>
+    <tr>
+      <td>ネットワーク経由でアクセスできない</td>
+      <td><code>.env</code> に <code>HOST=0.0.0.0</code> を追加して再起動。</td>
+    </tr>
+  </table>
+
+  <h3>Manual Setup / 手動セットアップ</h3>
+  <p><code>npx create-claude-hub</code> が動かない場合は、手動でセットアップできます：</p>
+
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span>git clone --depth 1 https://github.com/gdalabs/claude-hub.git my-dashboard
+cd my-dashboard
+cp hub.config.example.json hub.config.json
+echo "ANTHROPIC_API_KEY=sk-ant-xxxxx" > .env
+npm install
+npm run dev</span>
+  </div>
+</div>
+
+<!-- ===== 9. LINKS ===== -->
+<div class="page container">
+  <h2>Quick Reference / クイックリファレンス</h2>
+
+  <h3>Commands</h3>
+  <table>
+    <tr><th>Action</th><th>Command</th></tr>
+    <tr>
+      <td>Setup</td>
+      <td><code>npx create-claude-hub my-dashboard</code></td>
+    </tr>
+    <tr>
+      <td>Start</td>
+      <td><code>cd my-dashboard && npm run dev</code></td>
+    </tr>
+    <tr>
+      <td>Stop</td>
+      <td><kbd>Ctrl + C</kbd></td>
+    </tr>
+    <tr>
+      <td>Open</td>
+      <td><code>http://localhost:5174</code></td>
+    </tr>
+    <tr>
+      <td>Kill ports</td>
+      <td><code>lsof -ti :5174 :3456 | xargs kill</code></td>
+    </tr>
+  </table>
+
+  <h3>Links</h3>
+  <table>
+    <tr><th>Resource</th><th>URL</th></tr>
+    <tr><td>GitHub</td><td><a href="https://github.com/gdalabs/claude-hub" target="_blank">github.com/gdalabs/claude-hub</a></td></tr>
+    <tr><td>Anthropic Console</td><td><a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></td></tr>
+    <tr><td>Claude Code Docs</td><td><a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">docs.anthropic.com/en/docs/claude-code</a></td></tr>
+  </table>
+
+  <div class="footer">
+    claude-hub &mdash; MIT License &mdash; gdalabs &mdash; 2026
+  </div>
+</div>
+
+<script>
+function copyCode(btn) {
+  const block = btn.parentElement;
+  const code = block.querySelector('span').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+}
+</script>
+
+</body>
+</html>

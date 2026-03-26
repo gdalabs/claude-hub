@@ -18,6 +18,14 @@ export interface AgentMeta {
   messageCount: number;
   preview: string;
   name: string; // inferred agent name/role
+  taskCategory: string; // inferred task group (e.g. "Research", "Code", "Review")
+}
+
+export interface ProjectMemoryInfo {
+  project: string;
+  memoryDir: string;
+  fileCount: number;
+  files: string[];
 }
 
 export interface Message {

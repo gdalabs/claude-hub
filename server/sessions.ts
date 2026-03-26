@@ -2,7 +2,7 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import { join, basename } from "node:path";
 import { homedir, userInfo } from "node:os";
 import { execSync } from "node:child_process";
-import type { SessionMeta, Message, ProjectGroup, ContentBlock, AgentMeta, UserInfo } from "./types.js";
+import type { SessionMeta, Message, ProjectGroup, ContentBlock, AgentMeta, UserInfo, ProjectMemoryInfo } from "./types.js";
 
 const CLAUDE_DIR = join(homedir(), ".claude", "projects");
 const SESSIONS_DIR = join(homedir(), ".claude", "sessions");
@@ -55,6 +55,31 @@ function inferAgentName(prompt: string): string {
   // Fallback: first meaningful words
   const firstLine = prompt.split("\n")[0].slice(0, 40);
   return firstLine || "Agent";
+}
+
+// Categorize agent by task type from its prompt
+function inferTaskCategory(prompt: string): string {
+  if (!prompt) return "General";
+  const p = prompt.toLowerCase();
+
+  if (p.includes("explore") || p.includes("codebase") || p.includes("find file")) return "Explore";
+  if (p.includes("plan") || p.includes("architect") || p.includes("design") || p.includes("設計")) return "Plan";
+  if (p.includes("test") || p.includes("spec") || p.includes("テスト")) return "Test";
+  if (p.includes("review") || p.includes("audit") || p.includes("check") || p.includes("レビュー")) return "Review";
+  if (p.includes("search") || p.includes("grep") || p.includes("scan") || p.includes("検索")) return "Search";
+  if (p.includes("research") || p.includes("調査") || p.includes("investigate")) return "Research";
+  if (p.includes("deploy") || p.includes("build") || p.includes("デプロイ")) return "Deploy";
+  if (p.includes("fix") || p.includes("bug") || p.includes("修正") || p.includes("error")) return "Fix";
+  if (p.includes("refactor") || p.includes("リファクタ")) return "Refactor";
+  if (p.includes("docs") || p.includes("readme") || p.includes("document") || p.includes("ドキュメント")) return "Docs";
+  if (p.includes("security") || p.includes("sensitive") || p.includes("セキュリティ")) return "Security";
+  if (p.includes("compliance") || p.includes("ガイドライン")) return "Compliance";
+  if (p.includes("sns") || p.includes("instagram") || p.includes("投稿") || p.includes("twitter")) return "SNS";
+  if (p.includes("notification") || p.includes("push") || p.includes("通知")) return "Notification";
+  if (p.includes("claude code") || p.includes("claude-code")) return "Claude Code";
+  if (p.includes("write") || p.includes("implement") || p.includes("create") || p.includes("add")) return "Code";
+
+  return "General";
 }
 
 // Check if a process is running
@@ -210,9 +235,73 @@ export async function listSessions(): Promise<ProjectGroup[]> {
   return groups;
 }
 
+// Parse parent session JSONL to extract Agent tool_use metadata (description, subagent_type)
+async function getAgentToolUseMeta(sessionId: string): Promise<Map<string, { description: string; subagentType: string }>> {
+  const meta = new Map<string, { description: string; subagentType: string }>();
+  const projectDirs = await readdir(CLAUDE_DIR);
+
+  for (const dir of projectDirs) {
+    const filePath = join(CLAUDE_DIR, dir, `${sessionId}.jsonl`);
+    try {
+      const raw = await readFile(filePath, "utf-8");
+      const lines = raw.trim().split("\n").filter(Boolean);
+
+      // Collect Agent tool_use calls and match with subagent IDs
+      // Agent tool_use has: name="Agent", input.description, input.subagent_type, input.prompt
+      // The next subagent JSONL shares the prompt text, so we match by prompt content
+      const agentCalls: { description: string; subagentType: string; promptStart: string }[] = [];
+
+      for (const line of lines) {
+        try {
+          const obj = JSON.parse(line);
+          if (obj.type !== "assistant") continue;
+          const content = obj.message?.content;
+          if (!Array.isArray(content)) continue;
+          for (const block of content) {
+            if (block.type === "tool_use" && block.name === "Agent" && block.input) {
+              agentCalls.push({
+                description: block.input.description || "",
+                subagentType: block.input.subagent_type || block.input.subagentType || "general-purpose",
+                promptStart: (block.input.prompt || "").slice(0, 120),
+              });
+            }
+          }
+        } catch {}
+      }
+
+      // Now read subagent files to match by first prompt
+      const subDir = join(CLAUDE_DIR, dir, sessionId, "subagents");
+      try {
+        const subFiles = await readdir(subDir);
+        for (const file of subFiles) {
+          if (!file.endsWith(".jsonl")) continue;
+          const agentId = basename(file, ".jsonl");
+          try {
+            const subRaw = await readFile(join(subDir, file), "utf-8");
+            const firstLine = subRaw.split("\n")[0];
+            const firstObj = JSON.parse(firstLine);
+            const firstPrompt = extractText(firstObj.message?.content).slice(0, 120);
+
+            // Match with parent's Agent tool_use by comparing prompt start
+            const match = agentCalls.find((c) => c.promptStart && firstPrompt.startsWith(c.promptStart.slice(0, 60)));
+            if (match) {
+              meta.set(agentId, { description: match.description, subagentType: match.subagentType });
+            }
+          } catch {}
+        }
+      } catch {}
+    } catch {}
+  }
+
+  return meta;
+}
+
 export async function getSessionAgents(sessionId: string): Promise<AgentMeta[]> {
   const projectDirs = await readdir(CLAUDE_DIR);
   const agents: AgentMeta[] = [];
+
+  // Get metadata from parent session's Agent tool_use calls
+  const toolUseMeta = await getAgentToolUseMeta(sessionId);
 
   for (const dir of projectDirs) {
     const subDir = join(CLAUDE_DIR, dir, sessionId, "subagents");
@@ -237,8 +326,23 @@ export async function getSessionAgents(sessionId: string): Promise<AgentMeta[]> 
             } catch {}
           }
 
-          const name = inferAgentName(preview);
-          agents.push({ id: agentId, sessionId, messageCount: msgCount, preview, name });
+          // Use real metadata from Agent tool_use if available
+          const meta = toolUseMeta.get(agentId);
+          let name: string;
+          let taskCategory: string;
+
+          if (meta) {
+            // Real data: use description as name, subagent_type as category
+            name = meta.description || inferAgentName(preview);
+            taskCategory = meta.subagentType === "general-purpose" ? inferTaskCategory(preview)
+              : meta.subagentType.charAt(0).toUpperCase() + meta.subagentType.slice(1);
+          } else {
+            // Fallback to inference
+            name = inferAgentName(preview);
+            taskCategory = inferTaskCategory(preview);
+          }
+
+          agents.push({ id: agentId, sessionId, messageCount: msgCount, preview, name, taskCategory });
         } catch {}
       }
     } catch {}
@@ -343,6 +447,43 @@ export async function getUserInfo(): Promise<UserInfo> {
     totalSessions,
     plan: "Claude Code",
   };
+}
+
+export async function getProjectMemory(projectDirName: string): Promise<ProjectMemoryInfo> {
+  const memoryDir = join(homedir(), ".claude", "projects", projectDirName, "memory");
+  try {
+    const files = await readdir(memoryDir);
+    const mdFiles = files.filter((f) => f.endsWith(".md") && f !== "MEMORY.md");
+    return {
+      project: shortProjectName(decodeProjectDir(projectDirName)),
+      memoryDir,
+      fileCount: mdFiles.length,
+      files: mdFiles,
+    };
+  } catch {
+    return {
+      project: shortProjectName(decodeProjectDir(projectDirName)),
+      memoryDir,
+      fileCount: 0,
+      files: [],
+    };
+  }
+}
+
+export async function getAllProjectMemories(): Promise<ProjectMemoryInfo[]> {
+  try {
+    const projectDirs = await readdir(CLAUDE_DIR);
+    const results: ProjectMemoryInfo[] = [];
+    for (const dir of projectDirs) {
+      const dirPath = join(CLAUDE_DIR, dir);
+      const dirStat = await stat(dirPath);
+      if (!dirStat.isDirectory()) continue;
+      results.push(await getProjectMemory(dir));
+    }
+    return results;
+  } catch {
+    return [];
+  }
 }
 
 export function prepareApiMessages(

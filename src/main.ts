@@ -1,10 +1,11 @@
 import "./style.css";
-import { fetchSessions, fetchModels, fetchUserInfo, fetchAgents, createSession, fetchConfig } from "./api";
+import { fetchSessions, fetchModels, fetchUserInfo, fetchAgents, fetchMemories, createSession, fetchConfig } from "./api";
 import type { QuickStartItem } from "./api";
 import { renderChatView } from "./chat-view";
 import { generateQRSvg } from "./qrcode";
 import { getSites, addSite, removeSite, initSites } from "./sites";
-import type { ProjectGroup, ModelOption, UserInfo, SessionMeta, AgentMeta } from "./types";
+import { renderSettings } from "./settings";
+import type { ProjectGroup, ModelOption, UserInfo, SessionMeta, AgentMeta, ProjectMemoryInfo } from "./types";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -201,6 +202,7 @@ function renderShell() {
         <div class="tab-bar">
           <div class="tab active" data-tab="agents">Sessions</div>
           <div class="tab" data-tab="chat">Chat</div>
+          <div class="tab" data-tab="settings">Settings</div>
         </div>
 
         ${renderSitesBar(p?.project ?? "")}
@@ -321,6 +323,9 @@ function renderShell() {
         renderAgentGrid();
       } else if (tabName === "chat" && selectedSessionId) {
         showChat(selectedSessionId);
+      } else if (tabName === "settings") {
+        const content = document.getElementById("main-content")!;
+        renderSettings(content);
       }
     });
   });
@@ -600,10 +605,25 @@ function closeSidebar() {
   document.getElementById("sidebar-overlay")?.classList.remove("open");
 }
 
+const TASK_CATEGORY_COLORS: Record<string, string> = {
+  Explore: "#1D9E75", Research: "#378ADD", Plan: "#7C5CFC", Code: "#BA7517",
+  Review: "#D4537E", Test: "#E06C45", Fix: "#FF5555", Deploy: "#22AA88",
+  Search: "#4488CC", Refactor: "#AA77DD", Docs: "#66AAAA", Security: "#FF6644",
+  Compliance: "#DDAA33", SNS: "#DD55AA", Notification: "#55AADD",
+  "Claude Code": "#CC8833", General: "#888899",
+};
+
+function getCategoryColor(cat: string): string {
+  return TASK_CATEGORY_COLORS[cat] || "#888899";
+}
+
 async function showAgentsOverview() {
   const content = document.getElementById("main-content")!;
   content.className = "agent-grid-area";
-  content.innerHTML = `<div class="loading">Loading org chart...</div>`;
+  content.innerHTML = `<div class="loading">Loading agent map...</div>`;
+
+  // Fetch data in parallel
+  const [memories] = await Promise.all([fetchMemories()]);
 
   // Collect agent stats per project
   const projectStats = await Promise.all(
@@ -611,20 +631,32 @@ async function showAgentsOverview() {
       const totalAgents = g.sessions.reduce((n, s) => n + s.agentCount, 0);
       const activeCount = g.sessions.filter((s) => s.isActive).length;
 
-      const agentDetails: { session: SessionMeta; agents: AgentMeta[] }[] = [];
+      const allAgents: AgentMeta[] = [];
       for (const s of g.sessions.filter((s) => s.agentCount > 0)) {
         try {
           const agents = await fetchAgents(s.id);
-          if (agents.length > 0) agentDetails.push({ session: s, agents });
+          allAgents.push(...agents);
         } catch {}
       }
 
-      return { group: g, idx: i, totalAgents, activeCount, agentDetails };
+      // Group agents by task category
+      const byCategory = new Map<string, AgentMeta[]>();
+      for (const a of allAgents) {
+        const cat = a.taskCategory || "General";
+        if (!byCategory.has(cat)) byCategory.set(cat, []);
+        byCategory.get(cat)!.push(a);
+      }
+
+      // Memory info for this project
+      const mem = memories.find((m) => m.project === g.project);
+
+      return { group: g, idx: i, totalAgents, activeCount, allAgents, byCategory, memory: mem };
     })
   );
 
   const grandTotalAgents = projectStats.reduce((n, p) => n + p.totalAgents, 0);
   const grandTotalSessions = groups.reduce((n, g) => n + g.sessions.length, 0);
+  const grandTotalMemory = memories.reduce((n, m) => n + m.fileCount, 0);
 
   content.innerHTML = `
     <div class="org-chart">
@@ -634,7 +666,7 @@ async function showAgentsOverview() {
           <div class="org-node-icon" style="background:var(--accent)">CH</div>
           <div class="org-node-info">
             <div class="org-node-name">claude-hub</div>
-            <div class="org-node-meta">${groups.length} projects · ${grandTotalSessions} sessions · ${grandTotalAgents} agents</div>
+            <div class="org-node-meta">${groups.length} projects · ${grandTotalSessions} sessions · ${grandTotalAgents} agents · ${grandTotalMemory} memory files</div>
           </div>
         </div>
       </div>
@@ -658,45 +690,43 @@ async function showAgentsOverview() {
                 <div class="org-node-meta">
                   ${ps.activeCount > 0 ? `<span class="pulse pulse-green"></span>` : ""}
                   ${ps.group.sessions.length} sessions · ${ps.totalAgents} agents
+                  ${ps.memory && ps.memory.fileCount > 0 ? `· <span class="memory-badge">${ps.memory.fileCount} memory</span>` : ""}
                 </div>
               </div>
             </div>
 
-            ${ps.group.sessions.length > 0 ? `
+            ${ps.byCategory.size > 0 ? `
               <div class="org-connector-v-sm"></div>
-              <div class="org-children">
-                ${ps.group.sessions.map((s) => {
-                  const ad = ps.agentDetails.find((d) => d.session.id === s.id);
-                  return `
-                  <div class="org-session-branch">
-                    <div class="org-node org-session-node ${s.isActive ? "active" : ""}">
-                      <div class="org-node-dot">${statusDot(s.isActive)}</div>
-                      <div class="org-node-info">
-                        <div class="org-node-name-sm">${esc(s.preview.slice(0, 28) || "Session")}</div>
-                        <div class="org-node-meta">${esc(s.model)} · ${s.messageCount} msg</div>
-                      </div>
+              <div class="org-task-groups">
+                ${Array.from(ps.byCategory.entries()).map(([category, agents]) => `
+                  <div class="org-task-group">
+                    <div class="org-task-header">
+                      <span class="org-task-badge" style="background:${getCategoryColor(category)}">${esc(category)}</span>
+                      <span class="org-task-count">${agents.length} agent${agents.length > 1 ? "s" : ""}</span>
                     </div>
-                    ${ad && ad.agents.length > 0 ? `
-                      <div class="org-agents-tree">
-                        ${ad.agents.map((a, ai) => `
-                          <div class="org-agent-leaf">
-                            <div class="org-tree-line ${ai === ad.agents.length - 1 ? "last" : ""}"></div>
-                            <div class="org-node org-agent-node">
-                              <div class="org-agent-icon">&#129302;</div>
-                              <div class="org-node-info">
-                                <div class="org-agent-name">${esc(a.name)}</div>
-                                <div class="org-node-meta">${a.messageCount} msg</div>
-                              </div>
+                    <div class="org-agents-tree">
+                      ${agents.map((a, ai) => `
+                        <div class="org-agent-leaf">
+                          <div class="org-tree-line ${ai === agents.length - 1 ? "last" : ""}"></div>
+                          <div class="org-node org-agent-node">
+                            <div class="org-agent-icon" style="border-color:${getCategoryColor(category)}">A</div>
+                            <div class="org-node-info">
+                              <div class="org-agent-name">${esc(a.name)}</div>
+                              <div class="org-node-meta">${a.messageCount} msg · ${esc(a.preview.slice(0, 40))}${a.preview.length > 40 ? "..." : ""}</div>
                             </div>
                           </div>
-                        `).join("")}
-                      </div>
-                    ` : ""}
+                        </div>
+                      `).join("")}
+                    </div>
                   </div>
-                `;
-                }).join("")}
+                `).join("")}
               </div>
-            ` : ""}
+            ` : `
+              <div class="org-connector-v-sm"></div>
+              <div class="org-task-groups">
+                <div class="org-no-agents">No sub-agents</div>
+              </div>
+            `}
           </div>
         `).join("")}
       </div>

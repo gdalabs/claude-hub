@@ -1,4 +1,4 @@
-import type { ProjectGroup, Message, ModelOption, AgentMeta, UserInfo } from "./types";
+import type { ProjectGroup, Message, ModelOption, AgentMeta, UserInfo, ProjectMemoryInfo } from "./types";
 
 export interface QuickStartItem {
   section?: string;
@@ -14,6 +14,30 @@ export interface HubConfig {
 
 export async function fetchConfig(): Promise<HubConfig> {
   const res = await fetch("/api/config");
+  return res.json();
+}
+
+export async function saveConfig(config: HubConfig): Promise<void> {
+  await fetch("/api/config", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(config),
+  });
+}
+
+export interface BrowseEntry {
+  name: string;
+  isProject: boolean;
+}
+
+export interface BrowseResult {
+  path: string;
+  entries: BrowseEntry[];
+}
+
+export async function browseDirectory(path?: string): Promise<BrowseResult> {
+  const url = path ? `/api/browse?path=${encodeURIComponent(path)}` : "/api/browse";
+  const res = await fetch(url);
   return res.json();
 }
 
@@ -43,6 +67,11 @@ export async function fetchModels(): Promise<ModelOption[]> {
 
 export async function fetchAgents(sessionId: string): Promise<AgentMeta[]> {
   const res = await fetch(`/api/sessions/${sessionId}/agents`);
+  return res.json();
+}
+
+export async function fetchMemories(): Promise<ProjectMemoryInfo[]> {
+  const res = await fetch("/api/memories");
   return res.json();
 }
 

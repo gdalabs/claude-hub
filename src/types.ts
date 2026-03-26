@@ -17,6 +17,14 @@ export interface AgentMeta {
   messageCount: number;
   preview: string;
   name: string;
+  taskCategory: string;
+}
+
+export interface ProjectMemoryInfo {
+  project: string;
+  memoryDir: string;
+  fileCount: number;
+  files: string[];
 }
 
 export interface ProjectGroup {
