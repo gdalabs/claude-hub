@@ -144,8 +144,8 @@ Commands shown in the collapsible Quick Start bar at the top. Click to copy.
 {
   "quickstart": [
     { "section": "My Projects" },
-    { "label": "My App", "cmd": "cd ~/projects/my-app && claude" },
-    { "label": "Backend", "cmd": "cd ~/projects/backend && claude" },
+    { "label": "My App", "cmd": "cd ~/projects/my-app && claude --enable-auto-mode" },
+    { "label": "Backend", "cmd": "cd ~/projects/backend && claude --enable-auto-mode" },
 
     { "section": "Claude Code Commands" },
     { "cmd": "/init", "display": "/init — Create CLAUDE.md" },
