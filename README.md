@@ -218,6 +218,17 @@ For secure remote access from anywhere, we recommend [Tailscale](https://tailsca
 2. Access `http://<tailscale-ip>:5174` from anywhere
 3. Use the **QR** button in the header for quick mobile access
 
+### Web Terminal (ttyd)
+
+To run Claude Code from your phone or tablet browser, use [ttyd](https://github.com/nicm/ttyd):
+
+```bash
+brew install ttyd
+ttyd -p 7681 -W zsh
+```
+
+Then open `http://<tailscale-ip>:7681` on your mobile device. Copy commands from the Quick Start panel in claude-hub and paste them into ttyd.
+
 ---
 
 ## Scripts

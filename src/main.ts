@@ -231,17 +231,34 @@ function renderShell() {
     localStorage.setItem("claude-hub-model", currentModel);
   });
 
+  function fallbackCopy(text: string, onSuccess: () => void) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    onSuccess();
+  }
+
   // Recovery commands: click to copy (event delegation)
   document.addEventListener("click", (e) => {
     const el = (e.target as HTMLElement).closest(".recovery-code");
     if (!el) return;
     e.stopPropagation();
     const cmd = (el as HTMLElement).dataset.copy ?? el.textContent ?? "";
-    navigator.clipboard.writeText(cmd).then(() => {
+    const showCopied = () => {
       const orig = el.textContent;
       el.textContent = "Copied!";
       setTimeout(() => { el.textContent = orig; }, 1000);
-    });
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(cmd).then(showCopied).catch(() => fallbackCopy(cmd, showCopied));
+    } else {
+      fallbackCopy(cmd, showCopied);
+    }
   });
 
   document.getElementById("theme-toggle")?.addEventListener("click", () => {
