@@ -204,30 +204,128 @@ claude-hub/
 
 ---
 
-## Remote Access
+## Remote Access — Run Claude Code from Your Phone
 
-The API server binds to `127.0.0.1` (localhost only) by default for security. To allow access from other devices on your local network, add to `.env`:
+claude-hub + [ttyd](https://github.com/tsl0922/ttyd) + [Tailscale](https://tailscale.com/) lets you run Claude Code on your desktop machine from a phone, tablet, or any browser — no API key needed (uses your existing Claude Max subscription).
+
+### Architecture
 
 ```
-HOST=0.0.0.0
+┌─────────────┐     Tailscale VPN      ┌──────────────────────────┐
+│  Phone /    │◄───────────────────────►│  Your Mac / PC           │
+│  Tablet     │                         │                          │
+│             │  :5174  claude-hub      │  ┌──────────────────┐   │
+│  Browser    │────────►(Quick Start)   │  │ claude-hub       │   │
+│             │                         │  │ Command reference│   │
+│             │  :7681  ttyd            │  └──────────────────┘   │
+│             │────────►(Web Terminal)  │  ┌──────────────────┐   │
+│             │                         │  │ ttyd + tmux      │   │
+│             │                         │  │ Claude Code CLI  │   │
+│             │                         │  └──────────────────┘   │
+└─────────────┘                         └──────────────────────────┘
 ```
 
-For secure remote access from anywhere, we recommend [Tailscale](https://tailscale.com/):
+### Why ttyd instead of SSH?
 
-1. Install Tailscale on your Mac and mobile device
-2. Access `http://<tailscale-ip>:5174` from anywhere
-3. Use the **QR** button in the header for quick mobile access
+Claude Code stores authentication in the **macOS Keychain**. SSH sessions cannot access the Keychain, so `claude` will prompt for login every time. ttyd runs as a local process on your machine, so Keychain access works seamlessly.
 
-### Web Terminal (ttyd)
+### Screenshots
 
-To run Claude Code from your phone or tablet browser, use [ttyd](https://github.com/nicm/ttyd):
+| claude-hub Quick Start (mobile) | ttyd Web Terminal (mobile) |
+|:---:|:---:|
+| ![Quick Start](docs/screenshots/hub-quickstart-mobile.png) | ![ttyd Terminal](docs/screenshots/ttyd-mobile.png) |
+
+### Setup
+
+#### 1. Install Tailscale
+
+Install [Tailscale](https://tailscale.com/) on both your desktop and mobile device. Note your desktop's Tailscale IP:
 
 ```bash
-brew install ttyd
-ttyd -p 7681 -W zsh
+tailscale status
+# 100.x.x.x  your-machine  ...
 ```
 
-Then open `http://<tailscale-ip>:7681` on your mobile device. Copy commands from the Quick Start panel in claude-hub and paste them into ttyd.
+#### 2. Install & configure ttyd
+
+```bash
+# Install ttyd and tmux
+brew install ttyd tmux
+
+# Optional: Install a CJK-friendly monospace font
+brew install --cask font-hackgen-nerd
+```
+
+Create a startup script (e.g., `~/.claude/ttyd-start.sh`):
+
+```bash
+#!/bin/zsh
+TAILSCALE_IP=$(tailscale ip -4 2>/dev/null || echo "localhost")
+echo ""
+echo "  Claude Hub: http://${TAILSCALE_IP}:5174"
+echo ""
+# Attach to existing tmux session or create a new one
+exec tmux new-session -A -s main
+```
+
+```bash
+chmod +x ~/.claude/ttyd-start.sh
+```
+
+#### 3. Start services
+
+```bash
+# Start ttyd (bind to Tailscale IP only for security)
+TAILSCALE_IP=$(tailscale ip -4)
+ttyd -p 7681 -W \
+  -t fontSize=24 \
+  -t fontFamily="'HackGen Console NF', 'Menlo', monospace" \
+  -t 'theme={"background":"#0d1117","foreground":"#e6edf3","cursor":"#58a6ff"}' \
+  -t cursorBlink=true \
+  ~/.claude/ttyd-start.sh &
+
+# Start claude-hub
+cd /path/to/claude-hub && npm run dev &
+```
+
+#### 4. Access from your phone
+
+1. Open `http://<tailscale-ip>:5174` — **claude-hub** (copy commands from Quick Start)
+2. Open `http://<tailscale-ip>:7681` — **ttyd** (paste commands, run Claude Code)
+
+> **Tip:** Use the **QR** button in claude-hub's header to quickly open on your phone.
+
+### Session persistence with tmux
+
+ttyd's WebSocket disconnects when your phone screen turns off. Without tmux, the session (and your Claude Code conversation) is lost. With tmux, the session stays alive:
+
+- **Screen off → screen on:** ttyd reconnects and reattaches to the same tmux session
+- **Multiple sessions:** Open multiple browser tabs, each running a different project
+- **Detach/reattach:** `Ctrl+B, D` to detach, reconnect via ttyd to reattach
+
+### Security
+
+- Bind ttyd to your **Tailscale IP only** — never use `0.0.0.0`
+- Only devices on your Tailscale network can access the terminal
+- No authentication needed (Tailscale handles identity)
+- Keep your Mac awake: **System Settings → Display → Prevent sleep when on power adapter**
+
+### Quick Start configuration
+
+Add remote access commands to `hub.config.json`:
+
+```json
+{
+  "quickstart": [
+    { "section": "Remote Access (Tailscale)" },
+    { "label": "Web Terminal (ttyd)", "cmd": "http://<tailscale-ip>:7681", "display": "http://<tailscale-ip>:7681" },
+    { "section": "My Projects" },
+    { "label": "My App", "cmd": "cd ~/projects/my-app && claude --enable-auto-mode" }
+  ]
+}
+```
+
+Commands in Quick Start are **click-to-copy** — tap a command on your phone, switch to ttyd, and paste.
 
 ---
 
