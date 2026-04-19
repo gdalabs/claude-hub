@@ -9,6 +9,10 @@ export default defineConfig({
         target: "http://localhost:3456",
         changeOrigin: true,
       },
+      "/auth": {
+        target: "http://localhost:3456",
+        changeOrigin: true,
+      },
     },
   },
 });

@@ -7,8 +7,17 @@ import { streamChat, getModels, createSession } from "./chat.js";
 import { loadConfig, saveConfig } from "./config.js";
 import type { HubConfig } from "./config.js";
 import { browseDirectory } from "./browse.js";
+import { authMiddleware, rateLimitMiddleware, auditMiddleware, handleLogin } from "./security.js";
 
 const app = new Hono();
+
+// Security layers
+app.use("/api/*", rateLimitMiddleware());
+app.use("/api/*", auditMiddleware());
+app.use("/api/*", authMiddleware());
+
+// Login page (no auth required)
+app.get("/auth/login", (c) => handleLogin(c));
 
 // Config
 app.get("/api/config", async (c) => {

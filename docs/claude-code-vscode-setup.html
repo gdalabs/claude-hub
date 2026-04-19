@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code + VS Code Setup Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #1a1a2e;
+    background: #f8f9fa;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ===== Cover ===== */
+  .cover {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    color: #fff;
+    padding: 60px 24px;
+    text-align: center;
+  }
+
+  .cover-logo {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, #D4A574, #C4956A);
+    border-radius: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 32px rgba(212,165,116,0.35);
+  }
+
+  .cover-logo svg { width: 36px; height: 36px; }
+
+  .cover h1 { font-size: 36px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px; }
+  .cover .subtitle { font-size: 17px; color: #8b949e; margin-bottom: 36px; }
+
+  .cover-features {
+    display: flex; gap: 20px; max-width: 640px; margin: 0 auto 32px;
+    flex-wrap: wrap; justify-content: center;
+  }
+
+  .cover-feature {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 18px 22px; flex: 1; min-width: 170px;
+  }
+
+  .cover-feature-icon { font-size: 26px; margin-bottom: 6px; }
+  .cover-feature-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .cover-feature-desc { font-size: 12px; color: #8b949e; }
+
+  .cover .version {
+    font-size: 13px; color: #484f58;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ===== Sections ===== */
+  .page {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    padding: 36px 40px;
+    margin: 24px auto;
+    max-width: 860px;
+    page-break-inside: avoid;
+  }
+
+  h2 {
+    font-size: 21px; font-weight: 700; color: #0d1117;
+    margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 2px solid #D4A574; display: inline-block;
+  }
+
+  h3 {
+    font-size: 16px; font-weight: 600; color: #24292f;
+    margin-top: 24px; margin-bottom: 10px;
+  }
+
+  p { margin-bottom: 12px; color: #333; }
+
+  /* ===== Code ===== */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    background: #f0f3f6; padding: 2px 7px; border-radius: 4px;
+    font-size: 13px; color: #8B5E3C;
+  }
+
+  .code-block {
+    background: #0d1117; color: #e6edf3;
+    border-radius: 10px; padding: 16px 20px;
+    margin: 12px 0 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; line-height: 1.8;
+    overflow-x: auto; position: relative;
+  }
+
+  .code-block .copy-btn {
+    position: absolute; top: 8px; right: 10px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    color: #8b949e; border-radius: 6px; padding: 4px 10px;
+    font-size: 12px; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .code-block .copy-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+  /* ===== Terminal ===== */
+  .terminal {
+    background: #0d1117; border-radius: 10px; overflow: hidden;
+    margin: 16px 0; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+
+  .terminal-bar {
+    background: #161b22; padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .terminal-dot.red { background: #f85149; }
+  .terminal-dot.yellow { background: #d29922; }
+  .terminal-dot.green { background: #1D9E75; }
+  .terminal-title { color: #8b949e; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-left: 8px; }
+
+  .terminal-body {
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; line-height: 1.9; color: #e6edf3;
+  }
+
+  /* ===== Steps ===== */
+  .step {
+    display: flex; gap: 16px; margin-bottom: 18px; align-items: flex-start;
+  }
+
+  .step-num {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, #D4A574, #B8895A);
+    color: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; flex-shrink: 0; margin-top: 2px;
+  }
+
+  .step-body { flex: 1; }
+  .step-title { font-weight: 600; font-size: 15px; margin-bottom: 3px; color: #0d1117; }
+  .step-desc { font-size: 13px; color: #555; }
+
+  /* ===== Boxes ===== */
+  .info-box {
+    background: #fdf6ef; border-left: 4px solid #D4A574;
+    border-radius: 0 8px 8px 0; padding: 14px 18px;
+    margin: 14px 0; font-size: 13px;
+  }
+
+  .info-box strong { color: #8B5E3C; }
+
+  .warn-box {
+    background: #fff8f0; border-left: 4px solid #d29922;
+    border-radius: 0 8px 8px 0; padding: 14px 18px;
+    margin: 14px 0; font-size: 13px;
+  }
+
+  .warn-box strong { color: #9a6700; }
+
+  /* ===== Checklist ===== */
+  .checklist { list-style: none; margin: 12px 0; }
+
+  .checklist li {
+    padding: 7px 0 7px 30px; position: relative; font-size: 14px;
+  }
+
+  .checklist li::before {
+    content: ''; position: absolute; left: 0; top: 9px;
+    width: 18px; height: 18px;
+    border: 2px solid #D4A574; border-radius: 4px;
+  }
+
+  /* ===== Table ===== */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+
+  th {
+    background: #f6f8fa; text-align: left;
+    padding: 10px 14px; font-weight: 600; border-bottom: 2px solid #d0d7de;
+  }
+
+  td { padding: 10px 14px; border-bottom: 1px solid #eaecef; }
+
+  /* ===== Flow ===== */
+  .flow {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin: 24px 0; flex-wrap: wrap;
+  }
+
+  .flow-item {
+    background: #f6f8fa; border: 1px solid #d0d7de;
+    border-radius: 8px; padding: 10px 16px;
+    text-align: center; font-size: 12px; font-weight: 500;
+  }
+
+  .flow-arrow { color: #D4A574; font-size: 20px; padding: 0 8px; }
+
+  /* ===== Phase Banner ===== */
+  .phase-banner {
+    background: linear-gradient(135deg, #D4A574, #B8895A);
+    color: #fff;
+    text-align: center;
+    padding: 14px 24px;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+
+  .phase-banner .phase-sub {
+    font-size: 13px;
+    font-weight: 400;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+
+  /* ===== Footer ===== */
+  .footer {
+    text-align: center; padding: 32px 0;
+    color: #999; font-size: 12px;
+  }
+
+  /* ===== Print ===== */
+  @media print {
+    body { background: #fff; font-size: 13px; }
+    .cover { padding: 50px 24px; page-break-after: always; }
+    .page { box-shadow: none; margin: 0; padding: 28px 32px; page-break-inside: avoid; }
+    .copy-btn { display: none; }
+  }
+
+  /* ===== Mobile ===== */
+  @media (max-width: 640px) {
+    .cover { padding: 40px 16px; }
+    .cover h1 { font-size: 28px; }
+    .cover-features { flex-direction: column; }
+    .page { padding: 24px 20px; margin: 16px 12px; }
+    .step { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== COVER ===== -->
+<div class="cover">
+  <div class="cover-logo">
+    <svg viewBox="0 0 40 40" fill="none"><path d="M20 6L34 20L20 34L6 20L20 6Z" fill="white" opacity="0.9"/><path d="M20 12L28 20L20 28L12 20L20 12Z" fill="white"/></svg>
+  </div>
+  <h1>Claude Code + VS Code</h1>
+  <div class="subtitle">Environment Setup Guide &mdash; 環境構築ガイド</div>
+
+  <div class="cover-features">
+    <div class="cover-feature">
+      <div class="cover-feature-icon">&#128187;</div>
+      <div class="cover-feature-title">Terminal First</div>
+      <div class="cover-feature-desc">まずターミナルで体験</div>
+    </div>
+    <div class="cover-feature">
+      <div class="cover-feature-icon">&#9881;</div>
+      <div class="cover-feature-title">VS Code Integration</div>
+      <div class="cover-feature-desc">エディタと統合</div>
+    </div>
+    <div class="cover-feature">
+      <div class="cover-feature-icon">&#9889;</div>
+      <div class="cover-feature-title">10 Min Setup</div>
+      <div class="cover-feature-desc">Zero to productive</div>
+    </div>
+  </div>
+
+  <div class="version">2026-03 &middot; For Claude Code beginners</div>
+</div>
+
+<!-- ===== 1. OVERVIEW ===== -->
+<div class="page container">
+  <h2>Claude Code とは？</h2>
+  <p>
+    Claude Code は Anthropic 公式の <strong>CLI（コマンドラインインターフェース）ツール</strong> です。
+    ターミナルから Claude に直接指示を出し、コードの生成・編集・デバッグ・リファクタリングなどをAIと対話しながら行えます。
+  </p>
+
+  <div class="flow">
+    <div class="flow-item">あなた<br>(自然言語で指示)</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-item">Claude Code<br>(ターミナル)</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-item">コード編集<br>ファイル操作・実行</div>
+  </div>
+
+  <h3>このガイドの流れ</h3>
+  <p>2つのフェーズに分けて進めます：</p>
+  <table>
+    <tr><th>Phase</th><th>Description</th></tr>
+    <tr>
+      <td><strong>Phase 1: ターミナル</strong></td>
+      <td>まず素のターミナルで Claude Code をインストール・認証・体験する。CLI の基本を掴む。</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 2: VS Code</strong></td>
+      <td>ターミナルで慣れたら VS Code に移行。Extension + 内蔵ターミナルでフル活用。</td>
+    </tr>
+  </table>
+
+  <div class="info-box">
+    <strong>Why Terminal First?</strong> Claude Code の本体は CLI です。VS Code Extension も内部で CLI を呼んでいます。
+    ターミナルで基本を理解しておくと、VS Code での操作もスムーズに理解できます。
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PHASE 1: TERMINAL                          -->
+<!-- ========================================== -->
+<div class="phase-banner">
+  PHASE 1: Terminal
+  <div class="phase-sub">ターミナルで Claude Code を使えるようにする</div>
+</div>
+
+<!-- ===== 2. PREREQUISITES ===== -->
+<div class="page container">
+  <h2>Step 1: 事前準備</h2>
+
+  <ul class="checklist">
+    <li><strong>macOS / Linux / WSL</strong> &mdash; Windows はWSL経由で利用</li>
+    <li><strong>Node.js 18+</strong> &mdash; <code>node -v</code> で確認</li>
+    <li><strong>Anthropic アカウント</strong> &mdash; Claude Code の認証に必要</li>
+  </ul>
+
+  <h3>Node.js のインストール（未インストールの場合）</h3>
+
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span># macOS (Homebrew)
+brew install node
+
+# または nvm を使用（推奨）
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+source ~/.zshrc   # or ~/.bashrc
+nvm install --lts</span>
+  </div>
+
+  <div class="info-box">
+    <strong>確認:</strong> インストール後、<code>node -v</code> と <code>npm -v</code> が表示されれば OK。
+  </div>
+
+  <div class="warn-box">
+    <strong>Pro Plan 必須:</strong> Claude Code は Pro Plan ($20/mo) 以上で利用可能です。無料プランでは利用できません。Max Plan ($200/mo) だとレート制限が大幅に緩和されます。
+  </div>
+</div>
+
+<!-- ===== 3. INSTALL CLAUDE CODE ===== -->
+<div class="page container">
+  <h2>Step 2: Claude Code のインストール</h2>
+
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span>npm install -g @anthropic-ai/claude-code</span>
+  </div>
+
+  <div class="info-box">
+    <strong>Permission error?</strong> macOS で permission エラーが出る場合：<br>
+    <code>npm install -g @anthropic-ai/claude-code --cache /tmp/npm-cache</code>
+  </div>
+
+  <h3>インストール確認</h3>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span>claude --version</span>
+  </div>
+</div>
+
+<!-- ===== 4. AUTH ===== -->
+<div class="page container">
+  <h2>Step 3: 初回認証</h2>
+  <p>ターミナルを開いて、任意のディレクトリで <code>claude</code> を実行します。</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">ターミナルで <code>claude</code> を実行</div>
+      <div class="step-desc">macOS なら Terminal.app、iTerm2 など何でも OK。</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">ブラウザで認証</div>
+      <div class="step-desc">自動でブラウザが開きます。Anthropic アカウントでログイン。</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">認証完了 &rarr; ターミナルに戻る</div>
+      <div class="step-desc">ターミナルに戻ると Claude Code の対話モードが開始しています。</div>
+    </div>
+  </div>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="terminal-dot red"></div>
+      <div class="terminal-dot yellow"></div>
+      <div class="terminal-dot green"></div>
+      <div class="terminal-title">Terminal</div>
+    </div>
+    <div class="terminal-body">
+<span style="color:#58a6ff">$</span> claude
+<br>
+<br><span style="color:#D4A574; font-weight:bold">  Claude Code</span> <span style="color:#8b949e">v1.x.x</span>
+<br>
+<br><span style="color:#8b949e">  Opening browser for authentication...</span>
+<br><span style="color:#1D9E75">  Authenticated successfully!</span>
+<br>
+<br><span style="color:#D4A574">  ?</span> What can I help you with?
+<br><span style="color:#8b949e">  &gt; </span><span style="color:#fff; font-style:italic">（ここに指示を入力）</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 5. FIRST EXPERIENCE ===== -->
+<div class="page container">
+  <h2>Step 4: ターミナルで使ってみる</h2>
+
+  <h3>プロジェクトに移動して起動</h3>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span>cd ~/projects/my-app
+claude</span>
+  </div>
+
+  <h3>試してみよう</h3>
+  <p>以下のような指示を入力してみてください：</p>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="terminal-dot red"></div>
+      <div class="terminal-dot yellow"></div>
+      <div class="terminal-dot green"></div>
+      <div class="terminal-title">Claude Code</div>
+    </div>
+    <div class="terminal-body">
+<span style="color:#8b949e"># プロジェクトの理解</span>
+<br><span style="color:#D4A574">&gt;</span> このプロジェクトの構成を説明して
+<br>
+<br><span style="color:#8b949e"># ファイルを読む</span>
+<br><span style="color:#D4A574">&gt;</span> package.json の中身を見せて
+<br>
+<br><span style="color:#8b949e"># コードを書く</span>
+<br><span style="color:#D4A574">&gt;</span> Hello World を表示する index.html を作って
+<br>
+<br><span style="color:#8b949e"># バグ修正</span>
+<br><span style="color:#D4A574">&gt;</span> src/utils.ts のエラーハンドリングを修正して
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>Point:</strong> Claude Code はプロジェクト内のファイルを自動で読み取り、コンテキストを理解します。
+    「このファイルを修正して」のように自然言語で指示するだけで OK。
+  </div>
+
+  <h3>Permission（権限の確認）</h3>
+  <p>Claude Code はファイル編集やコマンド実行の前に確認を求めます：</p>
+  <table>
+    <tr><th>Option</th><th>Description</th></tr>
+    <tr><td><strong>Allow once</strong></td><td>今回だけ許可</td></tr>
+    <tr><td><strong>Allow for session</strong></td><td>このセッション中は許可</td></tr>
+    <tr><td><strong>Allow always</strong></td><td>今後常に許可（設定に保存）</td></tr>
+    <tr><td><strong>Deny</strong></td><td>拒否</td></tr>
+  </table>
+
+  <div class="warn-box">
+    <strong>Security:</strong> 最初は「Allow once」で様子を見て、信頼できる操作だけ「Allow always」にするのが安全です。
+  </div>
+</div>
+
+<!-- ===== 6. CLI COMMANDS ===== -->
+<div class="page container">
+  <h2>Step 5: 覚えておきたい CLI コマンド</h2>
+
+  <h3>起動コマンド</h3>
+  <table>
+    <tr><th>Command</th><th>Description</th></tr>
+    <tr><td><code>claude</code></td><td>対話モードを開始</td></tr>
+    <tr><td><code>claude "指示文"</code></td><td>ワンショットで指示を実行（対話なし）</td></tr>
+  </table>
+
+  <h3>セッション中のスラッシュコマンド</h3>
+  <table>
+    <tr><th>Command</th><th>Description</th></tr>
+    <tr><td><code>/init</code></td><td>CLAUDE.md を自動生成</td></tr>
+    <tr><td><code>/help</code></td><td>ヘルプを表示</td></tr>
+    <tr><td><code>/cost</code></td><td>今のセッションのコストを表示</td></tr>
+    <tr><td><code>/clear</code></td><td>会話履歴をクリア</td></tr>
+    <tr><td><code>/compact</code></td><td>会話履歴を圧縮してコンテキスト節約</td></tr>
+  </table>
+
+  <h3>キーボードショートカット</h3>
+  <table>
+    <tr><th>Key</th><th>Action</th></tr>
+    <tr><td><kbd>Enter</kbd></td><td>メッセージ送信</td></tr>
+    <tr><td><kbd>Shift + Enter</kbd></td><td>改行（送信せずに）</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>実行中のタスクをキャンセル</td></tr>
+    <tr><td><kbd>Ctrl + C</kbd></td><td>Claude Code を終了</td></tr>
+  </table>
+</div>
+
+<!-- ===== 7. CLAUDE.md ===== -->
+<div class="page container">
+  <h2>Step 6: CLAUDE.md を作成する</h2>
+  <p>
+    <code>CLAUDE.md</code> はプロジェクトのルートに置く設定ファイルです。
+    Claude Code がプロジェクトを理解するための「取扱説明書」として機能します。
+  </p>
+
+  <h3>自動生成（おすすめ）</h3>
+  <p>Claude Code のセッション中に <code>/init</code> と入力すると、プロジェクトを自動解析して生成してくれます。</p>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span># Claude Code セッション内で
+/init</span>
+  </div>
+
+  <h3>CLAUDE.md に書くこと</h3>
+  <table>
+    <tr><th>Section</th><th>Example</th></tr>
+    <tr>
+      <td><strong>プロジェクト概要</strong></td>
+      <td>何をするプロジェクトか、技術スタック</td>
+    </tr>
+    <tr>
+      <td><strong>ビルド・実行コマンド</strong></td>
+      <td><code>npm run dev</code>, <code>npm run build</code>, <code>npm test</code></td>
+    </tr>
+    <tr>
+      <td><strong>コーディング規約</strong></td>
+      <td>言語、フォーマッタ、命名規則</td>
+    </tr>
+    <tr>
+      <td><strong>注意点・制約</strong></td>
+      <td>触ってはいけないファイル、特殊な設定</td>
+    </tr>
+  </table>
+
+  <h3>サンプル</h3>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span># CLAUDE.md
+
+## Project
+E-commerce web app built with Next.js + TypeScript.
+
+## Commands
+- `npm run dev` — Start dev server (port 3000)
+- `npm run build` — Production build
+- `npm test` — Run Jest tests
+
+## Conventions
+- Use TypeScript strict mode
+- Components in `src/components/`, pages in `src/app/`
+- Use Tailwind CSS for styling</span>
+  </div>
+
+  <div class="info-box">
+    <strong>Checkpoint:</strong> ここまでで Phase 1 は完了です。ターミナルから Claude Code を起動し、プロジェクトの理解・コード生成・ファイル編集ができるようになりました。
+    次は VS Code と統合して、より快適な開発環境を作ります。
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PHASE 2: VS CODE                           -->
+<!-- ========================================== -->
+<div class="phase-banner">
+  PHASE 2: VS Code
+  <div class="phase-sub">エディタと統合してフル活用する</div>
+</div>
+
+<!-- ===== 8. VS CODE SETUP ===== -->
+<div class="page container">
+  <h2>Step 7: VS Code の準備</h2>
+
+  <ul class="checklist">
+    <li><strong>VS Code</strong> &mdash; <a href="https://code.visualstudio.com/" target="_blank">code.visualstudio.com</a> からインストール</li>
+    <li><strong><code>code</code> コマンド</strong> &mdash; ターミナルから VS Code を開けるようにする</li>
+  </ul>
+
+  <h3><code>code</code> コマンドの有効化</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">VS Code を開く</div>
+      <div class="step-desc">アプリケーションから VS Code を起動。</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Command Palette を開く</div>
+      <div class="step-desc"><kbd>Cmd + Shift + P</kbd>（macOS）/ <kbd>Ctrl + Shift + P</kbd>（Linux）</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">"Shell Command: Install 'code' command in PATH" を実行</div>
+      <div class="step-desc">これでターミナルから <code>code .</code> が使えるようになります。</div>
+    </div>
+  </div>
+
+  <h3>プロジェクトを VS Code で開く</h3>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span>cd ~/projects/my-app
+code .</span>
+  </div>
+</div>
+
+<!-- ===== 9. VS CODE EXTENSION ===== -->
+<div class="page container">
+  <h2>Step 8: Claude Code Extension のインストール</h2>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">拡張機能サイドバーを開く</div>
+      <div class="step-desc"><kbd>Cmd + Shift + X</kbd>（macOS）/ <kbd>Ctrl + Shift + X</kbd>（Linux）</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">"Claude Code" を検索</div>
+      <div class="step-desc">発行元が <strong>Anthropic</strong> であることを確認。</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Install をクリック</div>
+      <div class="step-desc">インストール後、サイドバーに Claude アイコンが表示されます。</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>Alternative:</strong> コマンドラインからもインストールできます：<br>
+    <code>code --install-extension anthropic.claude-code</code>
+  </div>
+
+  <div class="warn-box">
+    <strong>前提:</strong> Phase 1 で CLI の <code>claude</code> がインストール・認証済みであること。Extension は CLI をバックエンドとして使用します。
+  </div>
+
+  <h3>Extension でできること</h3>
+  <table>
+    <tr><th>Feature</th><th>Description</th></tr>
+    <tr>
+      <td><strong>サイドバー Chat</strong></td>
+      <td>VS Code 内で Claude と対話。コードのコンテキストが自動で渡される。</td>
+    </tr>
+    <tr>
+      <td><strong>ファイル編集</strong></td>
+      <td>Claude の提案する変更を diff 表示で確認 &rarr; Accept / Reject。</td>
+    </tr>
+    <tr>
+      <td><strong>Terminal 連携</strong></td>
+      <td>内蔵ターミナルでの <code>claude</code> コマンドとシームレスに連携。</td>
+    </tr>
+    <tr>
+      <td><strong>ステータスバー</strong></td>
+      <td>Claude Code の接続状態・トークン使用量をリアルタイム表示。</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ===== 10. VS CODE TIPS ===== -->
+<div class="page container">
+  <h2>Step 9: VS Code で快適に使うコツ</h2>
+
+  <h3>1. ターミナルを分割する</h3>
+  <p>
+    VS Code のターミナルを分割して、片方で Claude Code、もう片方で通常のコマンド（<code>npm run dev</code> など）を実行すると効率的です。
+  </p>
+  <div class="info-box">
+    <strong>Shortcut:</strong> <kbd>Cmd + \</kbd>（macOS）でターミナルを分割。
+  </div>
+
+  <h3>2. 変更の確認は Source Control タブで</h3>
+  <p>
+    Claude Code がファイルを編集すると、VS Code の Source Control（<kbd>Cmd + Shift + G</kbd>）で差分を確認できます。
+    変更内容を目で確認してからコミットする習慣をつけましょう。
+  </p>
+
+  <h3>3. Auto Save を有効にする</h3>
+  <p>Claude Code がファイルを書き換えた後、エディタが自動で最新状態を読み込みます。</p>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span>// VS Code settings.json に追加
+{
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000
+}</span>
+  </div>
+
+  <h3>4. Git との組み合わせ</h3>
+  <p>Claude Code で大きな変更をする前に、ブランチを切っておくと安心です：</p>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <span>git checkout -b feature/claude-experiment</span>
+  </div>
+  <div class="info-box">
+    <strong>Tip:</strong> Claude Code に直接「git commit して」と頼むこともできます。コミットメッセージも自動生成してくれます。
+  </div>
+
+  <h3>5. Extension と CLI の使い分け</h3>
+  <table>
+    <tr><th>Use Case</th><th>Recommended</th></tr>
+    <tr>
+      <td>ちょっとした質問・修正</td>
+      <td><strong>Extension サイドバー</strong> &mdash; エディタから離れずに操作</td>
+    </tr>
+    <tr>
+      <td>大きな変更・複数ファイル操作</td>
+      <td><strong>内蔵ターミナル CLI</strong> &mdash; より細かい制御が可能</td>
+    </tr>
+    <tr>
+      <td>プロジェクト外の作業</td>
+      <td><strong>外部ターミナル CLI</strong> &mdash; ディレクトリを自由に移動</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ===== 11. TROUBLESHOOTING ===== -->
+<div class="page container">
+  <h2>Troubleshooting / トラブルシューティング</h2>
+
+  <table>
+    <tr><th>Problem</th><th>Solution</th></tr>
+    <tr>
+      <td><code>claude: command not found</code></td>
+      <td>
+        npm のグローバルパスが通っていない可能性。<br>
+        <code>npm bin -g</code> のパスを <code>PATH</code> に追加。<br>
+        または <code>npx @anthropic-ai/claude-code</code> で直接実行。
+      </td>
+    </tr>
+    <tr>
+      <td>認証エラー</td>
+      <td>
+        <code>claude /logout</code> &rarr; 再度 <code>claude</code> で認証し直す。
+      </td>
+    </tr>
+    <tr>
+      <td><code>npm install -g</code> で permission error</td>
+      <td>
+        <div class="code-block" style="margin:6px 0"><button class="copy-btn" onclick="copyCode(this)">Copy</button><span>npm install -g @anthropic-ai/claude-code --cache /tmp/npm-cache</span></div>
+        または nvm を使って Node.js を管理する（root 権限不要）。
+      </td>
+    </tr>
+    <tr>
+      <td>VS Code Extension が動かない</td>
+      <td>
+        CLI の <code>claude</code> が先にインストール・認証済みであることを確認（Phase 1）。<br>
+        Extension は CLI をバックエンドとして使用します。
+      </td>
+    </tr>
+    <tr>
+      <td>レート制限に引っかかる</td>
+      <td>
+        <code>/cost</code> で使用量を確認。<br>
+        <code>/compact</code> でコンテキストを圧縮するとトークン消費を抑えられる。<br>
+        Max Plan への切り替えも検討。
+      </td>
+    </tr>
+    <tr>
+      <td>ファイル変更がエディタに反映されない</td>
+      <td>
+        VS Code の <kbd>Cmd + Shift + P</kbd> &rarr; "Revert File" で最新を読み込み。<br>
+        または <code>files.autoSave</code> を有効化。
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- ===== 12. QUICK REFERENCE ===== -->
+<div class="page container">
+  <h2>Quick Reference / クイックリファレンス</h2>
+
+  <h3>Phase 1: ターミナル</h3>
+  <table>
+    <tr><th>#</th><th>Action</th><th>Command</th></tr>
+    <tr><td>1</td><td>Node.js インストール</td><td><code>brew install node</code></td></tr>
+    <tr><td>2</td><td>Claude Code インストール</td><td><code>npm install -g @anthropic-ai/claude-code</code></td></tr>
+    <tr><td>3</td><td>初回認証</td><td><code>claude</code>（ブラウザが開く）</td></tr>
+    <tr><td>4</td><td>プロジェクトで開始</td><td><code>cd my-project && claude</code></td></tr>
+    <tr><td>5</td><td>CLAUDE.md 生成</td><td><code>/init</code>（セッション内で）</td></tr>
+  </table>
+
+  <h3>Phase 2: VS Code</h3>
+  <table>
+    <tr><th>#</th><th>Action</th><th>Command / Step</th></tr>
+    <tr><td>6</td><td>VS Code インストール</td><td><a href="https://code.visualstudio.com/" target="_blank">code.visualstudio.com</a></td></tr>
+    <tr><td>7</td><td><code>code</code> コマンド有効化</td><td>Command Palette &rarr; "Install code command"</td></tr>
+    <tr><td>8</td><td>Extension インストール</td><td>Extensions &rarr; "Claude Code" &rarr; Install</td></tr>
+    <tr><td>9</td><td>プロジェクトを開く</td><td><code>code .</code>（プロジェクトディレクトリで）</td></tr>
+  </table>
+
+  <h3>Links</h3>
+  <table>
+    <tr><th>Resource</th><th>URL</th></tr>
+    <tr><td>Claude Code Docs</td><td><a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">docs.anthropic.com/en/docs/claude-code</a></td></tr>
+    <tr><td>Anthropic Console</td><td><a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></td></tr>
+    <tr><td>VS Code</td><td><a href="https://code.visualstudio.com/" target="_blank">code.visualstudio.com</a></td></tr>
+    <tr><td>Node.js</td><td><a href="https://nodejs.org/" target="_blank">nodejs.org</a></td></tr>
+  </table>
+
+  <div class="footer">
+    Claude Code + VS Code Setup Guide &mdash; 2026 &mdash; For beginners
+  </div>
+</div>
+
+<script>
+function copyCode(btn) {
+  const block = btn.parentElement;
+  const code = block.querySelector('span').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+}
+</script>
+
+</body>
+</html>

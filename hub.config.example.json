@@ -11,7 +11,7 @@
     { "section": "Remote Access (Tailscale + ttyd)" },
     { "label": "Web Terminal", "cmd": "http://<tailscale-ip>:7681", "display": "http://<tailscale-ip>:7681" },
     { "label": "My App", "cmd": "cd ~/projects/my-app && claude --enable-auto-mode" },
-    { "label": "Start ttyd", "cmd": "ttyd -p 7681 -W zsh" },
+    { "label": "Start ttyd", "cmd": "ttyd -i <tailscale-ip> -p 7681 -W zsh" },
     { "section": "Claude Code Commands" },
     { "cmd": "/init", "display": "/init — Create CLAUDE.md" },
     { "cmd": "/cost", "display": "/cost — Check token usage" },
@@ -20,7 +20,7 @@
     { "cmd": "/help", "display": "/help — Show help" },
     { "section": "Infrastructure" },
     { "label": "Start claude-hub", "cmd": "cd ~/projects/claude-hub && npm run dev" },
-    { "label": "Start ttyd (Web Terminal)", "cmd": "ttyd -p 7681 -W zsh" },
+    { "label": "Start ttyd (Web Terminal)", "cmd": "ttyd -i <tailscale-ip> -p 7681 -W zsh" },
     { "label": "Kill ports", "cmd": "lsof -ti :5174 :3456 :7681 | xargs kill" },
     { "label": "Check running ports", "cmd": "lsof -iTCP -sTCP:LISTEN -P | grep -E 'node|ttyd'" }
   ]
